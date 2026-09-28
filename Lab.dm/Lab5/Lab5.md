@@ -24,7 +24,7 @@ $tasks = [
     'is_completed'=> false
     ]
 ]; 
-<ol>
+    <ol>
             <?php foreach ($tasks as $task): ?>
                 <li>
                     <?= formatTitle($task['title']) ?> <br>
@@ -34,7 +34,7 @@ $tasks = [
                     Час: <?= $taskTimeEstimate ?>
                 </li>
             <?php endforeach; ?>
-</ol>
+    </ol>
 
 
 Контрольні запитання
