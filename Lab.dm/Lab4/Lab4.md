@@ -1,4 +1,5 @@
-````function formatTitle($text, $maxLength = 20)
+````php
+function formatTitle($text, $maxLength = 20)
 {
     return strlen($text) > $maxLength ? substr($text, 0, $maxLength)."..." : $text;
 }

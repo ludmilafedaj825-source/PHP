@@ -1,3 +1,4 @@
+````php
 $tasks = [
     [
     'id'=> 1,
@@ -24,7 +25,6 @@ $tasks = [
     'is_completed'=> false
     ]
 ]; 
-````php
 <ol>
     <?php foreach ($tasks as $task): ?>
         <li>
