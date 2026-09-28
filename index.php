@@ -1,9 +1,47 @@
-<<<<<<< HEAD
 <?php
 $appName = "Task Manager";
-$taskTitle = "Вивчити PHP та зробити лабораторні роботи";
 $taskTimeEstimate = 10;
-$isCompleted = false;
+$tasks = [
+    [
+    'id'=> 1,
+    'title' => 'Виконати лабораторну роботу №5',
+    'priority' => 'High',
+    'is_completed'=> true
+    ],
+    [
+    'id'=> 2,
+    'title' => 'Прочитати лекцію №5',
+    'priority' => 'Low',
+    'is_completed'=> true
+    ],
+    [
+    'id'=> 3,
+    'title' => 'Відповісти на контрольні запитання',
+    'priority' => 'Medium',
+    'is_completed'=> false
+    ],
+    [
+    'id'=> 4,
+    'title' => 'Підготуватися до екзамену',
+    'priority' => 'High',
+    'is_completed'=> false
+    ]
+]; // асоціативний масив
+
+
+//сортування масиву з пріоритетом
+usort($tasks, function($a, $b){
+$priorities = [
+    'High' => 1,
+    'Medium' => 2,
+    'Low' => 3
+];
+
+    $weightA = $priorities[$a['priority']] ?? 99;
+    $weightB = $priorities[$b['priority']] ?? 99;
+
+    return $weightA <=> $weightB;
+});
 
 function formatTitle($text, $maxLength = 20)
 {
@@ -26,12 +64,13 @@ function getCurrentGreeting(){
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?=  $appName ?></title>
+    <title><?= $appName ?></title>
     <style>
         .task-done{
             color: green;
@@ -39,7 +78,6 @@ function getCurrentGreeting(){
         }
         .task-pending{
             color: gray;
-            text-decoration: underline;
         }
     </style>
 </head>
@@ -47,61 +85,19 @@ function getCurrentGreeting(){
 <main>
     <header>
         <h1><?= $appName; ?></h1>
-        <ul>
-            <li> <?= formatTitle($taskTitle) ?></li>
-            <li> Нинішній час: <?= getCurrentGreeting() ?> </li>
-            <li class="<?= $isCompleted ? 'task-done' : 'task-pending' ?>">
-                <?php if ($isCompleted): ?>
-                    <p> ✔️ Виконано </p>
-                <?php else: ?>
-                    <p> 🕒 У процесі </p>
-                <?php endif; ?>
-            </li>
-            <li> <?= $taskTimeEstimate ;?> </li>
-        </ul>
+        <p> Нинішній час: <?= getCurrentGreeting() ?></p>
+        <ol>
+            <?php foreach ($tasks as $task): ?>
+                <li>
+                    <?= formatTitle($task['title']) ?> <br>
+                    Пріоритет: <?=  $task['priority'] ?> <br>
+                    <span class="<?= $task['is_completed'] ? 'task-done' : 'task-pending' ?>">
+                        Статус: <?= $task['is_completed'] ? '✔️ Виконано' : '🕒 У процесі' ?>  </span> <br>
+                    Час: <?= $taskTimeEstimate ?>
+                </li>
+            <?php endforeach; ?>
+        </ol>
     </header>
 </main>
 </body>
-=======
-<?php
-$appName = "Task Manager";
-$taskTitle = "Вивчити PHP";
-$taskTimeEstimate = 10;
-$isCompleted = false;
-?>
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        .task-done{
-            color: green;
-            text-decoration:underline;
-        }
-        .task-pending{
-            color: gray;
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-<main>
-    <header>
-        <h1><?= $appName; ?></h1>
-        <ul>
-            <li> <?= $taskTitle; ?></li>
-            <li class="<?= $isCompleted ? 'task-done' : 'task-pending' ?>">
-                <?php if ($isCompleted): ?>
-                    <p> ✔️ Виконано </p>
-                <?php else: ?>
-                    <p> 🕒 У процесі </p>
-                <?php endif; ?>
-            </li>
-            <li> <?= $taskTimeEstimate ;?> </li>
-        </ul>
-    </header>
-</main>
-</body>
->>>>>>> f7be394816accbc20e77b3bdf76ca897303f38e8
 </html>
