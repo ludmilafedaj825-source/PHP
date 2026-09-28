@@ -24,17 +24,20 @@ $tasks = [
     'is_completed'=> false
     ]
 ]; 
-    <ol>
-            <?php foreach ($tasks as $task): ?>
-                <li>
-                    <?= formatTitle($task['title']) ?> <br>
-                    Пріоритет: <?=  $task['priority'] ?> <br>
-                    <span class="<?= $task['is_completed'] ? 'task-done' : 'task-pending' ?>">
-                        Статус: <?= $task['is_completed'] ? '✔️ Виконано' : '🕒 У процесі' ?>  </span> <br>
-                    Час: <?= $taskTimeEstimate ?>
-                </li>
-            <?php endforeach; ?>
-    </ol>
+````php
+<ol>
+    <?php foreach ($tasks as $task): ?>
+        <li>
+            <?= formatTitle($task['title']) ?> <br>
+            Пріоритет: <?= $task['priority'] ?> <br>
+            <span class="<?= $task['is_completed'] ? 'task-done' : 'task-pending' ?>">
+                Статус: <?= $task['is_completed'] ? '✔️ Виконано' : '🕒 У процесі' ?>
+            </span> <br>
+            Час: <?= $taskTimeEstimate ?>
+        </li>
+    <?php endforeach; ?>
+</ol>
+````
 
 
 Контрольні запитання
