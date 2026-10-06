@@ -1,11 +1,6 @@
 <?php
-$appName = "Task Manager";
-$title = '';
-$description = '';
-$priority = '';
 $errors = [];
 $debug_mode = false;
-
 if($_SERVER['REQUEST_METHOD']==='POST') {
  // ?? '' — оператор об'єднання з null: якщо в $_POST чомусь немає такого ключа
 
@@ -73,75 +68,18 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $appName ?></title>
-    <style>
-        .task-done{
-            color: green;
-            text-decoration:underline;
-        }
-        .task-pending{
-            color: gray;
-        }
-        .alert.alert-danger{
-            text-align: center;
-            color: red;
-        }
-    </style>
-</head>
-<body>
-<main>
-    <header>
-        <h1><?= $appName; ?></h1>
-        <a href="index.php"> Повернутися до списку </a>
-    </header>
-    <?php if (!empty($errors)): ?>
-        <div class="alert alert-danger">
-            <p>Виникли помилки при збереженні завдання.</p>
-            <ul>
-                <?php foreach ($errors as $error): ?>
-                    <li><?= $error ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    <?php endif; ?>
-     <form action="create.php" method = "POST">
-            <div>
-                <label for="title">Назва завдання:  <span class="required">*</span> </label>
-                <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    placeholder="Введіть назву завдання"
-                    value="<?= $title ?? '' ?>">
-            </div>
+#Контрольні запитання
+1) У чому принципова різниця між валідацією на фронтенді (через атрибут required в HTML / або на JS) та на бекенді (PHP)?
+Фронтенд-валідація працює в браузері і є зручною для користувача, тому що помилку видно одразу. Бекенд-валідація працює на сервері, тому користувач не може на неї вплинути, і саме їй можна довіряти.
 
-            <div> 
-                <label for="description">Опис завдання:  <span class="required">*</span> </label>
-                <textarea
-                    id="description"
-                    name="description"
-                    placeholder="Введіть опис завдання"> </textarea>
-            </div>
-            <div>
-                <label for="priority">Пріоритет завдання: <span class="required">*</span></label>
-                <select id="priority" name="priority">
-                    <option  value="" disabled <?= empty($priority) ? 'selected' : '' ?>> Оберіть варіант </option>
-                    <option value="Low">Low(Низький) <?=  $priority==='Low' ? 'selected' : '' ?></option>
-                    <option value="Medium" >Medium(Середній) <?=  $priority==='Medium' ? 'selected' : '' ?></option>
-                    <option value="High">High(Високий) <?=  $priority==='High' ? 'selected' : '' ?></option>
-                </select>
-            </div>
-            <button type="submit"> Зберегти </button>
-    </form>
-    <?php if ($_SERVER['REQUEST_METHOD']==='POST' && empty($errors)): ?>
-        <strong> Демонстрація прехоплення даних через var_dump($_POST)(Лаб №6): </strong>
-        <pre> <?php var_dump($_POST); ?> </pre>
-    <?php endif; ?>
-</main>
-</body>
-</html>
+2) Чому серверна валідація є критично необхідною з точки зору безпеки? Хто і як може обійти вашу HTML required-валідацію?
+Фронтенд-валідацію контролює сам коричтувач. Обійти HTML required-валідацію можна видаливши атрибут у браузері, вимкнувши JS або відправити запит напряму. Тому сервер перевіряє все сам.
+
+3) Що робить функція trim()? Яку конкретну проблему (наприклад, при реєстрації пароля чи логіна) вона вирішує?
+Вона видаляє зайві пробіли на початку та в кінці рядка. Вона вирішує проблему, якщо користувач випадково ввів зайві пробіли до логіна або пароля, або коли поле з одних тільки пробілів пройшло б валідацію.
+
+4) Від чого захищає функція htmlspecialchars()? Наведіть приклад “поганого” тексту, який міг би зламати відображення сайту без цього захисту.
+Захищає від XSS-атак. Перетворює специфічні символи <, >, " на безпечні HTML-сутності і браузер їх показує як текст, а не як код. Наприклад, користувач ввіів би "<h1>Виконати лз з англ", тег не закритий, тому весь наступний текст відобразився б великим заголовком. 
+
+5) Що таке масив помилок (Error Bag) і чому краще збирати всі помилки та показувати їх одночасно, а не використовувати die() чи exit() при першій-ліпшій невідповідності?
+Це масив $errors, куди зберігаються всі помилки, щоб потім показати їх разом. Це краще, ніж die() чи exit() при першій-ліпшій невідповідності, тому що користувач бачить усі помилки одразу і виправляє їх за один раз, а не к=щоразу іншу помилку. Також сторінка не обривається, і введені дані залишаються у формі.
