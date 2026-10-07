@@ -4,11 +4,10 @@ $title = '';
 $description = '';
 $priority = '';
 $errors = [];
-$debug_mode = false;
+$debug_mode = true;
 
 if($_SERVER['REQUEST_METHOD']==='POST') {
  // ?? '' — оператор об'єднання з null: якщо в $_POST чомусь немає такого ключа
-
     $raw_title = trim($_POST['title'] ?? '');
     $raw_description = trim($_POST['description'] ?? '');
     $raw_priority = trim($_POST['priority'] ?? '');
@@ -30,8 +29,24 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
     if(empty($priority) || !in_array($priority, $allowed_priorities, true)){
         $errors[]="Будь ласка, оберіть пріоритет із запропонованих: Low, Medium, High!";
     }
+        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+            $maxSize = 20 * 1024 * 1024;
+            if ($_FILES['avatar']['size'] > $maxSize) {
+                $errors[] = "Файл завеликий!";
+            }
+
+            $allowedExtensions = ['jpg', 'jpeg', 'png'];
+            $ext = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
+            if(!in_array($ext, $allowedExtensions, true)){
+                $errors[] = "Дозволено завантажувати файли тільки у форматі: jpg, jpeg, png.";
+            }
+        }
 
     if(empty($errors)){
+        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK){
+            move_uploaded_file($_FILES['avatar']['tmp_name'], 'uploads/' . $_FILES['avatar']['name']);
+        }
+
         $file='data.json';
         $tasks=[]; // асоціативний масив
 
@@ -71,6 +86,7 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
         }  // Зупиняємо виконання скрипта після перенаправлення
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -109,7 +125,7 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
             </ul>
         </div>
     <?php endif; ?>
-     <form action="create.php" method = "POST">
+     <form action="create.php" method = "POST" enctype="multipart/form-data">
             <div>
                 <label for="title">Назва завдання:  <span class="required">*</span> </label>
                 <input
@@ -121,26 +137,28 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
             </div>
 
             <div> 
-                <label for="description">Опис завдання:  <span class="required">*</span> </label>
+                <label for="description">Опис завдання: <span class="required">*</span></label>
                 <textarea
                     id="description"
                     name="description"
-                    placeholder="Введіть опис завдання"> </textarea>
+                    placeholder="Введіть опис завдання"><?=  $description ?? '' ?></textarea>
             </div>
             <div>
                 <label for="priority">Пріоритет завдання: <span class="required">*</span></label>
                 <select id="priority" name="priority">
-                    <option  value="" disabled <?= empty($priority) ? 'selected' : '' ?>> Оберіть варіант </option>
-                    <option value="Low">Low(Низький) <?=  $priority==='Low' ? 'selected' : '' ?></option>
-                    <option value="Medium" >Medium(Середній) <?=  $priority==='Medium' ? 'selected' : '' ?></option>
-                    <option value="High">High(Високий) <?=  $priority==='High' ? 'selected' : '' ?></option>
+                    <option  value="" disabled <?= empty($priority) ? 'selected' : '' ?>> Оберіть варіант</option>
+                    <option value="Low"<?= $priority === 'Low' ? 'selected' : '' ?>>Low(Низький)</option>
+                    <option value="Medium" <?= $priority === 'Medium' ? 'selected' : '' ?>>Medium(Середній)</option>
+                    <option value="High" <?= $priority === 'High' ? 'selected' : '' ?>>High(Високий)</option>
                 </select>
             </div>
+            <input type="file" name="avatar" accept="image/png, image/jpeg">
             <button type="submit"> Зберегти </button>
     </form>
     <?php if ($_SERVER['REQUEST_METHOD']==='POST' && empty($errors)): ?>
         <strong> Демонстрація прехоплення даних через var_dump($_POST)(Лаб №6): </strong>
         <pre> <?php var_dump($_POST); ?> </pre>
+        <pre> <?php var_dump($_FILES) ?></pre>
     <?php endif; ?>
 </main>
 </body>
