@@ -1,4 +1,10 @@
 <?php
+session_start();
+if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
+    header('Location: login.php');
+    exit;
+}
+
 $appName = "Task Manager";
 $title = '';
 $description = '';
@@ -147,7 +153,7 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
                 <label for="priority">Пріоритет завдання: <span class="required">*</span></label>
                 <select id="priority" name="priority">
                     <option  value="" disabled <?= empty($priority) ? 'selected' : '' ?>> Оберіть варіант</option>
-                    <option value="Low"<?= $priority === 'Low' ? 'selected' : '' ?>>Low(Низький)</option>
+                    <option value="Low"<?= $priority === 'Low' ? ' selected' : '' ?>>Low(Низький)</option>
                     <option value="Medium" <?= $priority === 'Medium' ? 'selected' : '' ?>>Medium(Середній)</option>
                     <option value="High" <?= $priority === 'High' ? 'selected' : '' ?>>High(Високий)</option>
                 </select>

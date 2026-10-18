@@ -1,4 +1,5 @@
 <?php
+session_start();
 $appName = "Task Manager";
 $taskTimeEstimate = 10;
 $file = 'data.json';
@@ -23,8 +24,8 @@ usort($tasks, function($a, $b){
         'Low' => 3
     ];
 
-    $weightA = $priorities[$a['priority']] ?? 99;
-    $weightB = $priorities[$b['priority']] ?? 99;
+    $weightA = $priorities[$a['priority'] ?? ''] ?? 99;
+    $weightB = $priorities[$b['priority'] ?? ''] ?? 99;
 
     return $weightA <=> $weightB;
 });
@@ -49,6 +50,7 @@ function getCurrentGreeting() {
         return "Доброї ночі";
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -70,8 +72,13 @@ function getCurrentGreeting() {
 <body>
 <main>
     <header>
-        <h1><?= $appName; ?></h1>
-        <a href="create.php">Додати нове завдання</a>
+        <?php include 'navigation.php'; ?>
+        <h1>Головна сторінка</h1>
+        <?php if(isset($_SESSION['is_logged_in']) && $_SESSION['is_logged_in'] === true):  ?>
+            <p>Привіт, <?= $_SESSION['user_name'] ?>! <a href="logout.php">Вийти</a></p>
+        <?php else: ?>
+            <p>Ви увійшли як Гість. <a href="login.php">Увійти</a></p>
+        <?php endif; ?>
         <p> Нинішній час: <?= getCurrentGreeting() ?></p>
     </header> 
     <?php if ($is_created): ?> 
