@@ -1,0 +1,26 @@
+[
+    {
+        "id": 6,
+        "title": "Виконати лабараторну 7",
+        "isCompleted": true,
+        "deadline": null
+    },
+    {
+        "id": 6,
+        "title": "jfonxgml;xxf",
+        "isCompleted": false,
+        "deadline": null
+    },
+    {
+        "id": 8,
+        "title": "Виконати лабораторну роботу 10 PHP",
+        "isCompleted": false,
+        "deadline": "2026-10-19"
+    },
+    {
+        "id": 9,
+        "title": "Лабораторна робота 2",
+        "isCompleted": false,
+        "deadline": "2026-10-21"
+    }
+]

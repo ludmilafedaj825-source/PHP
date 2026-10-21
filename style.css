@@ -1,0 +1,63 @@
+body{
+    font-family: sans-serif;
+    max-width: 600px; 
+    margin: 80px auto;
+}
+
+nav a{ 
+    margin-right: 10px;
+}
+ 
+.alert{ 
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid; 
+}
+
+.alert-success{ 
+    color: green;
+}
+
+.alert-danger{ 
+    color: red; 
+}
+ 
+.field{ 
+    margin-bottom: 10px; 
+}
+
+label{ 
+    display: block;
+}
+
+input[type=text], input[type=password], input[type=date]{
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+.required{
+    color: red;
+}
+
+button{ 
+    padding: 10px;
+    background: #095132; 
+    color: #fff; 
+    border: none; 
+    cursor: pointer; 
+}
+
+.task-done{
+    color: green;
+    text-decoration:underline;
+}
+
+.task-pending{
+    color: gray;
+}
+
+.task-overdue { 
+    color: red; 
+}
