@@ -85,7 +85,7 @@ trait TimestampableTrait
 ```
 
 ``` php  
-/*Exceptions.php8/
+/*Exceptions.php*/
 <?php
 declare(strict_types=1);
 
