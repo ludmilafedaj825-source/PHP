@@ -2,8 +2,10 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Task.php';
+require_once __DIR__ . '/TaskStorageInterface.php';
+require_once __DIR__ . '/Exceptions.php';
 
-class TaskRepository
+class TaskRepository implements TaskStorageInterface
 {
     /** @var Task[] */
     private array $tasks = [];
@@ -13,30 +15,67 @@ class TaskRepository
         $this->load();
     }
 
-    public function findAll(): array  { return $this->tasks; }
+    public function findAll(): array  {
+         return $this->tasks; 
+    }
 
     public function findById(int $id): ?Task
     {
         foreach ($this->tasks as $task) {
-            if ($task->getId() === $id) return $task;
+            if ($task->getId() === $id)
+                return $task;
         }
         return null;
     }
 
     public function add(string $title, ?string $deadline = null): Task
     {
-        $task = new Task($this->generateNextId(), $title, false, $deadline);
-        $this->tasks[] = $task;
-        $this->save();
+        $errors=[];
+        $cleanTitle = trim($title);
+
+        if($cleanTitle===''){
+            $errors[] = "Заповнення назви завдання є обов'язковим.";
+        }
+        elseif(mb_strlen($cleanTitle)<3){
+            $errors[] = "Назва має містити не менше трьох символів.";
+        }
+        
+        if($deadline !== null && $deadline !== ''){
+            $timestamp = strtotime($deadline);
+            if($timestamp === false){
+                $errors[] = "Вказано некоректну дату дедлайну";
+            }
+        }
+        else{
+            $deadline = null;
+        }
+
+        if(!empty($errors)){
+            throw new ValidationException($errors);
+        }
+
+        $task = new Task(
+            id: $this -> generateNextId(),
+            title: $cleanTitle,
+            isCompleted: false,
+            deadline: $deadline,
+        );
+
+        $this -> tasks[] = $task;
+        $this -> save();
+
         return $task;
     }
 
     public function complete(int $id): bool
     {
         $task = $this->findById($id);
-        if (!$task) return false;
-        $task->complete();
-        $this->save();
+        if ($task===null) {
+            throw new TaskNotFoundException($id);
+        }
+
+        $task -> complete();
+        $this -> save();
         return true;
     }
 
@@ -50,7 +89,7 @@ class TaskRepository
                 return true;
             }
         }
-        return false;
+        throw new TaskNotFoundException($id);
     }
 
     public function countCompleted(): int
@@ -65,14 +104,21 @@ class TaskRepository
 
     private function generateNextId(): int
     {
-        if (empty($this->tasks)) return 1;
+        if (empty($this->tasks)) {
+            return 1;
+        }
         return max(array_map(fn(Task $t) => $t->getId(), $this->tasks)) + 1;
     }
 
     private function load(): void
     {
-        if (!file_exists($this->storageFile)) { $this->tasks = []; return; }
-        $data = json_decode(file_get_contents($this->storageFile), true) ?? [];
+        if(!file_exists($this->storageFile)){
+            $this->tasks = [];
+            return;
+        }
+
+        $json = file_get_contents($this->storageFile);
+        $data = json_decode($json, true) ?? [];
         $this->tasks = array_map(fn(array $item) => Task::fromArray($item), $data);
     }
 

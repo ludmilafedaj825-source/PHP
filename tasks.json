@@ -3,24 +3,40 @@
         "id": 6,
         "title": "Виконати лабараторну 7",
         "isCompleted": true,
-        "deadline": null
+        "deadline": null,
+        "createdAt": "2026-10-28 13:05:44",
+        "updatedAt": null
     },
     {
         "id": 6,
         "title": "jfonxgml;xxf",
         "isCompleted": false,
-        "deadline": null
+        "deadline": null,
+        "createdAt": "2026-10-28 13:05:44",
+        "updatedAt": null
     },
     {
         "id": 8,
         "title": "Виконати лабораторну роботу 10 PHP",
-        "isCompleted": false,
-        "deadline": "2026-10-19"
+        "isCompleted": true,
+        "deadline": "2026-10-19",
+        "createdAt": "2026-10-28 13:05:44",
+        "updatedAt": "2026-10-28 13:05:56"
     },
     {
         "id": 9,
         "title": "Лабораторна робота 2",
+        "isCompleted": true,
+        "deadline": "2026-10-21",
+        "createdAt": "2026-10-28 13:05:44",
+        "updatedAt": "2026-10-28 13:06:58"
+    },
+    {
+        "id": 10,
+        "title": "PHP Lab11",
         "isCompleted": false,
-        "deadline": "2026-10-21"
+        "deadline": "2026-10-29",
+        "createdAt": "2026-10-28 13:05:44",
+        "updatedAt": null
     }
 ]

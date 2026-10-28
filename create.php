@@ -4,6 +4,7 @@ session_start();
 
 require_once __DIR__ . '/Task.php';
 require_once __DIR__ . '/TaskRepository.php';
+require_once __DIR__ . '/Exceptions.php';
  
 if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
     header('Location: login.php');
@@ -20,18 +21,17 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
     $title = trim($_POST['title'] ?? '');
     $deadline = trim($_POST['deadline'] ?? '');
 
-    if(empty($title)){
-        $errors[]="Поле «Назва завдання» є обов'язковим до заповнення!";
-    }
-
-    if(empty($errors)){
+   try {
         $repo = new TaskRepository(__DIR__ . '/tasks.json');
         $repo->add($title, $deadline ?: null);
-        // Перенаправляємо користувача назад на головну сторінку index.php
         // Параметр ?created=1 повідомить головній сторінці, що все успішно збережено!
-            header('Location: index.php?created=1');
-            exit;
-        }  // Зупиняємо виконання скрипта після перенаправлення
+        header('Location: index.php?created=1');
+        exit; // Зупиняємо виконання скрипта після перенаправлення
+    } catch (ValidationException $e) {
+        $errors = $e->getErrors();
+    } catch (TaskManagerException $e) {
+        $errors = ['Помилка програми: ' . $e->getMessage()];
+    }
 }
 
 ?>
