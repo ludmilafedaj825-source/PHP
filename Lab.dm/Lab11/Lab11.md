@@ -1,4 +1,5 @@
-```php  TaskStorageInterface.php
+```php  
+/*TaskStorageInterface.php*/
 <?php
 declare(strict_types=1);
 
@@ -48,7 +49,8 @@ interface TaskStorageInterface
 
 ```
 
-```php TimestampableTrait.php
+```php 
+/*TimestampableTrait.php*/
 <?php
 declare(strict_types=1);
 
@@ -122,7 +124,8 @@ class ValidationException extends TaskManagerException
 }
 ```
 
-``` php Task.php
+``` php 
+/*Task.php*/
 use TimestampableTrait;
 
     public function __construct(
@@ -160,7 +163,8 @@ use TimestampableTrait;
     }   
 ```
 
-```php TaskRepository.php
+```php 
+/*TaskRepository.php*/
 require_once __DIR__ . '/TaskStorageInterface.php';
 require_once __DIR__ . '/Exceptions.php';
 class TaskRepository implements TaskStorageInterface{
@@ -205,7 +209,9 @@ class TaskRepository implements TaskStorageInterface{
 }
 ```
 
-``` php index.php
+``` php 
+
+/*index.php*/
 require_once __DIR__ . '/TaskStorageInterface.php';
 require_once __DIR__ . '/Exceptions.php';
 
@@ -298,6 +304,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ```
 
 ``` json
+    /*JSON*/
     {
         "id": 8,
         "title": "Виконати лабораторну роботу 10 PHP",
