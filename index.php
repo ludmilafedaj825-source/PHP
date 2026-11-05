@@ -143,7 +143,11 @@ function getCurrentGreeting() {
         <?php include 'navigation.php'; ?>
         <h1>Головна сторінка</h1>
     </header> 
-        <p>Користувач: <?= getCurrentGreeting() ?> <strong><?= htmlspecialchars($_SESSION['user_name'] ?? 'Адміністратор') ?></strong> | <a href="logout.php">Вийти</a></p>
+        <p>
+            Користувач: <strong><?= htmlspecialchars($_SESSION['user_name'] ?? 'Адміністратор') ?></strong> |
+            <a href="test_db.php">🔍 Діагностика БД (MySQL)</a> |
+            <a href="login.php">Вийти</a>
+        </p>
         <?php if ($feedbackMessage): ?>
             <div class="alert-success"><?= htmlspecialchars($feedbackMessage) ?></div>
         <?php endif; ?>
@@ -158,6 +162,7 @@ function getCurrentGreeting() {
                 </ul>
             </div>
         <?php endif; ?>
+
         <h2> Нове завдання</h2>
         <form method="POST" action="index.php" class = "form-add">
             <input type="hidden" name="action" value="add">
@@ -165,11 +170,13 @@ function getCurrentGreeting() {
             <input type="date" name="deadline" value="<?= htmlspecialchars($_POST['deadline'] ?? '') ?>">
             <button type="submit">Додати</button>
         </form>
+
     <div class="stats">
         Всього завдань: <?= count($tasks) ?>
         Виконано: <?= $repo->countCompleted() ?>
         Прострочено: <?= $repo->countOverdue() ?>
     </div>
+
     <div class="tasks-list">
     <?php if (empty($tasks)): ?>
         <p>Список завдань порожній.</p>
@@ -182,11 +189,11 @@ function getCurrentGreeting() {
                         <?php if ($task->getDeadline()): ?>
                             <small>(Дедлайн: <?= htmlspecialchars($task->getDeadline()) ?>)</small>
                         <?php endif; ?>
-                        </div>
-                        <div class="task-meta">
+                    </div>
+                    <div class="task-meta">
                             Створено: <?= htmlspecialchars($task->getCreatedAt()) ?>
                             <?php if ($task->getUpdatedAt()): ?>
-                                Оновлено: <?= htmlspecialchars($task->getUpdatedAt()) ?>
+                            |   Оновлено: <?= htmlspecialchars($task->getUpdatedAt()) ?>
                             <?php endif; ?>
                     </div>
                 </div>

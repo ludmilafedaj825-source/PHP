@@ -34,9 +34,17 @@
     {
         "id": 10,
         "title": "PHP Lab11",
-        "isCompleted": false,
+        "isCompleted": true,
         "deadline": "2026-10-29",
         "createdAt": "2026-10-28 13:05:44",
+        "updatedAt": "2026-11-02 15:59:32"
+    },
+    {
+        "id": 11,
+        "title": "PHP 12",
+        "isCompleted": false,
+        "deadline": "2026-11-01",
+        "createdAt": "2026-11-02 15:59:28",
         "updatedAt": null
     }
 ]
