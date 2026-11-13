@@ -22,8 +22,8 @@ if($_SERVER['REQUEST_METHOD']==='POST') {
     $deadline = trim($_POST['deadline'] ?? '');
 
    try {
-        $repo = new TaskRepository(__DIR__ . '/tasks.json');
-        $repo->add($title, $deadline ?: null);
+        $repo = new TaskRepository($pdo = new PDO('sqlite:tasks.db'));
+        $repo->add($_SESSION['user_id'], $title, $deadline ?: null);
         // Параметр ?created=1 повідомить головній сторінці, що все успішно збережено!
         header('Location: index.php?created=1');
         exit; // Зупиняємо виконання скрипта після перенаправлення

@@ -8,18 +8,18 @@ class Task
 
     public function __construct(
         public readonly int $id,
+        public readonly int $userId,
         private string $title,
         private bool $isCompleted = false,
         private ?string $deadline = null,
-        ?string $createdAt = null,
-        ?string $updatedAt = null,
     ){
-        $this->initTimestamps($createdAt, $updatedAt);
+        if(empty($this->title)){
+            throw new InvalidArgumentException('Назва завдання не може бути порожньою.');
+        }
     }
 
     // --- Геттери ---
 
-    public function getId(): int {return $this -> id;}
     public function getTitle(): string {return $this -> title;}
     public function isCompleted(): bool {return $this -> isCompleted;}
     public function getDeadline(): ?string {return $this -> deadline;}
@@ -49,11 +49,32 @@ class Task
         return 'У процесі';
     }
 
+    
+    // Статичний метод: з масиву (прочитаного з JSON) створює об'єкт Task
+    public static function fromArray(array $data): self
+    {
+         $task = new self(
+            id: (int) $data['id'],
+            userId: (int) ($data['userId'] ?? 0),
+            title: (string) $data['title'],
+            isCompleted: (bool) ($data['isCompleted'] ?? false),
+            deadline: $data['deadline'] ?? null,
+        );
+
+        $task->initTimestamps(
+            createdAt: $data['createdAt'] ?? null,
+            updatedAt: $data['updatedAt'] ?? null,
+        );
+
+        return $task;
+    }
+
     // Перетворює об'єкт на звичайний масив для JSON-кодування
     public function toArray(): array
     {
         return [
             'id' => $this -> id,
+            'userId' => $this -> userId,
             'title' => $this -> title,
             'isCompleted' => $this -> isCompleted,
             'deadline' => $this -> deadline,
@@ -62,17 +83,5 @@ class Task
         ];
     }
 
-    // Статичний метод: з масиву (прочитаного з JSON) створює об'єкт Task
-    public static function fromArray(array $data): self
-    {
-        return new self(
-            id: (int) $data['id'],
-            title: (string) $data['title'],
-            isCompleted: (bool) ($data['isCompleted'] ?? false),
-            deadline: $data['deadline'] ?? null,
-            createdAt: $data['createdAt'] ?? null,
-            updatedAt: $data['updatedAt'] ?? null,
-        );
-    }
 }
 ?>

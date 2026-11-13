@@ -2,115 +2,88 @@
 declare(strict_types=1);
 session_start();
 
+require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Task.php';
 require_once __DIR__ . '/TaskStorageInterface.php';
 require_once __DIR__ . '/TaskRepository.php';
 require_once __DIR__ . '/Exceptions.php';
 
-/*$appName = "Task Manager";
-$taskTimeEstimate = 10;
-$file = 'tasks.json';
-$tasks = []; // асоціативний масив*/
-
-if (!isset($_SESSION['is_logged_in']) || $_SESSION['is_logged_in'] !== true) {
-    header('Location: login.php');
-    exit;
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['user_id'] = 1;
+    $_SESSION['user_name'] = 'Студент';
 }
 
-$repo = new TaskRepository(__DIR__ . '/tasks.json');
+$currentUserId = (int) $_SESSION['user_id'];
+$pdo = Database::getConnection();
+$repo = new TaskRepository($pdo);
 
 $formErrors = [];
 $feedbackMessage = $_SESSION['feedback'] ?? null;
 unset($_SESSION['feedback']);
 
-// Перевіряємо GET-параметр у посиланні:
-// Якщо користувача перенаправило з create.php?created=1 — покажемо повідомлення про успіх!
-$is_created = isset($_GET['created']) && $_GET['created'] === '1';
-if ($is_created && $feedbackMessage === null) {
-    $feedbackMessage = 'Завдання успішно додано!';
-}
-
-// Обробка дій
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Обробка POST-запитів
+if($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    try{
+    try {
+        if ($action === 'add') {
+            $title = $_POST['title'] ?? '';
+            $deadline = trim($_POST['deadline'] ?? '') ?: null;
 
-    if ($action === 'add') {
-        $title    = $_POST['title'] ?? '';
-        $deadline = trim($_POST['deadline'] ?? '') ?: null;
+            $repo->add($currentUserId, $title, $deadline);
+            $_SESSION['feedback'] = 'Завдання успішно збережено в базі даних!';
+            header('Location: index.php');
+            exit;
+        }
 
-        $repo->add($title, $deadline);
-        $_SESSION['feedback'] = 'Завдання успішно додано!';
-        header('Location: index.php');
-        exit;
-    }
+        if ($action === 'complete') {
+            $id = (int) ($_POST['id'] ?? 0);
+            $repo->complete($id, $currentUserId);
+            $_SESSION['feedback'] = 'Статус завдання змінено на "Виконано"!';
+            header('Location: index.php');
+            exit;
+        }
 
-    if ($action === 'complete') {
-        $id = (int) ($_POST['id'] ?? 0);
-        $repo->complete($id);
-        $_SESSION['feedback'] = 'Статус завдання оновлено!';
-        header('Location: index.php');
-        exit;
-    }
-
-    if ($action === 'delete') {
-        $id = (int) ($_POST['id'] ?? 0);
-        $repo->delete($id);
-        $_SESSION['feedback'] = 'Завдання видалено!';
-        header('Location: index.php');
-        exit;
-    }
-
-    header('Location: index.php');
-    exit;
-    }
-    catch(ValidationException $e){
+        if ($action === 'delete') {
+            $id = (int) ($_POST['id'] ?? 0);
+            $repo->delete($id, $currentUserId);
+            $_SESSION['feedback'] = 'Завдання видалено з бази даних!';
+            header('Location: index.php');
+            exit;
+        }
+    } catch (ValidationException $e) {
         // Перехоплюємо помилки валідації форми
         $formErrors = $e->getErrors();
-    }
-    catch(TaskNotFoundException $e){
+    } catch (TaskNotFoundException $e) {
         // Перехоплюємо спробу маніпуляції неіснуючим завданням
         $formErrors = [$e->getMessage()];
-    }
-    catch(TaskManagerException $e){
+    } catch (TaskManagerException $e) {
         $formErrors = ['Помилка програми: ' . $e->getMessage()];
+    } catch (Throwable $e) {
+        $formErrors = ['Критична помилка: ' . $e->getMessage()];
     }
-    catch(Throwable $e){
-        $formErrors = ['Критичний збій обробки запиту. Зверніться до техпідтримки.'];
-    }
-    finally{}
 }
 
-$tasks = $repo->findAll();
+// Розрахунок параметрів пагінації
+$perPage = 5;
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$totalTasks = $repo->countByUser($currentUserId);
+$totalPages = max(1, (int) ceil($totalTasks / $perPage));
 
-/*if(file_exists($file)) {
-    $content = file_get_contents($file);
-    $decoded = json_decode($content, true);
+if ($page > $totalPages && $totalPages > 0) {
+    $page = $totalPages;
+}
 
-    if(is_array($decoded)) {
-        $tasks= $decoded;
-    }
-}*/
+$tasks = $repo->findAllByUser($currentUserId, $page, $perPage);
+$completedCount = $repo->countCompletedByUser($currentUserId);
+$overdueCount = $repo->countOverdueByUser($currentUserId);
 
-//сортування масиву з пріоритетом
-/*usort($tasks, function($a, $b){
-    $priorities = [
-        'High' => 1,
-        'Medium' => 2,
-        'Low' => 3
-    ];
-
-    $weightA = $priorities[$a['priority'] ?? ''] ?? 99;
-    $weightB = $priorities[$b['priority'] ?? ''] ?? 99;
-
-    return $weightA <=> $weightB;
-});*/
-
-function formatTitle($text, $maxLength = 20)
+/*
+**function formatTitle($text, $maxLength = 20)
 {
     return mb_strlen($text) > $maxLength ? mb_substr($text, 0, $maxLength)."..." : $text;
-}
+}**
+*/
 
 function getCurrentGreeting() {
     $hour = date('H');
@@ -135,19 +108,23 @@ function getCurrentGreeting() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Менеджер завдань (ООП: Інтерфейси та Винятки)</title>
+    <title>Менеджер завдань - Лабораторна №13</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
         <?php include 'navigation.php'; ?>
-        <h1>Головна сторінка</h1>
+        <h1>Менеджер завдань (MySQL + PDO)</h1>
     </header> 
-        <p>
-            Користувач: <strong><?= htmlspecialchars($_SESSION['user_name'] ?? 'Адміністратор') ?></strong> |
+        <p> Авторизовани користувач: <strong><?= htmlspecialchars($_SESSION['user_name'] ?? '') ?></strong>
             <a href="test_db.php">🔍 Діагностика БД (MySQL)</a> |
             <a href="login.php">Вийти</a>
         </p>
+        <div class="stats">
+            <span>Всього завдань: <?= $totalTasks ?></span>
+            <span>Виконано: <?= $completedCount ?></span>
+            <span>Прострочено: <?= $overdueCount ?></span>
+    </div>
         <?php if ($feedbackMessage): ?>
             <div class="alert-success"><?= htmlspecialchars($feedbackMessage) ?></div>
         <?php endif; ?>
@@ -163,67 +140,58 @@ function getCurrentGreeting() {
             </div>
         <?php endif; ?>
 
-        <h2> Нове завдання</h2>
         <form method="POST" action="index.php" class = "form-add">
             <input type="hidden" name="action" value="add">
-            <input type="text" name="title" placeholder="Що потрібно зробити (мінімум 3 символи)?" value="<?= htmlspecialchars($_POST['title'] ?? '') ?>">
-            <input type="date" name="deadline" value="<?= htmlspecialchars($_POST['deadline'] ?? '') ?>">
+            <input type="text" name="title" placeholder="Що потрібно зробити (мінімум 3 символи)?" required>
+            <input type="date" name="deadline" placeholder="Дата дедлайну">
             <button type="submit">Додати</button>
         </form>
-
-    <div class="stats">
-        Всього завдань: <?= count($tasks) ?>
-        Виконано: <?= $repo->countCompleted() ?>
-        Прострочено: <?= $repo->countOverdue() ?>
-    </div>
+    <h2>Список завдань (Сторінка <?= $page ?> з <?= $totalPages ?>)</h2>
 
     <div class="tasks-list">
-    <?php if (empty($tasks)): ?>
-        <p>Список завдань порожній.</p>
-    <?php else: ?>
-        <?php foreach ($tasks as $task): ?>
-            <div class="task">
-                <div>
+        <?php if (empty($tasks)): ?>
+            <p>Список завдань порожній.</p>
+        <?php else: ?>
+            <?php foreach ($tasks as $task): ?>
+                <div class="task <?= $task->isCompleted() ? 'task-completed' : '' ?>">
                     <div>
                         <strong><?= htmlspecialchars($task->getTitle()) ?></strong>
-                        <?php if ($task->getDeadline()): ?>
-                            <small>(Дедлайн: <?= htmlspecialchars($task->getDeadline()) ?>)</small>
-                        <?php endif; ?>
+                        <br>
+                        <small>(Дедлайн: <?= htmlspecialchars($task->getDeadline() ?? 'Не встановлено') ?>)</small>
                     </div>
                     <div class="task-meta">
-                            Створено: <?= htmlspecialchars($task->getCreatedAt()) ?>
-                            <?php if ($task->getUpdatedAt()): ?>
-                            |   Оновлено: <?= htmlspecialchars($task->getUpdatedAt()) ?>
-                            <?php endif; ?>
-                    </div>
-                </div>
-                <div class="actions">
-                    <?php
-                        $badgeClass = match ($task->getStatusLabel()) {
-                            'Виконано'   => 'badge-success',
-                            'Прострочено' => 'badge-danger',
-                            default       => 'badge-primary',
-                        };
-                    ?>
-                        <span class="badge <?= $badgeClass ?>"><?= $task->getStatusLabel() ?></span>
-
-                    <?php if (!$task->isCompleted()): ?>
-                        <form method="POST" action="index.php" style="display:inline">
-                            <input type="hidden" name="action" value="complete">
-                            <input type="hidden" name="id" value="<?= $task->getId() ?>">
-                            <button type="submit" title="Позначити виконаним">✓</button>
-                        </form>
-                    <?php endif; ?>
-
+                        <?php if(!$task->isCompleted()): ?>
+                            <form method="POST" action="index.php" style="display:inline">
+                                <input type="hidden" name="action" value="complete">
+                                <input type="hidden" name="id" value="<?= $task->id ?>">
+                                <button type="submit" title="Позначити виконаним">✓</button>
+                            </form>
+                        <?php endif; ?>
                         <form method="POST" action="index.php" style="display:inline">
                             <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="id" value="<?= $task->getId() ?>">
+                            <input type="hidden" name="id" value="<?= $task->id ?>">
                             <button type="submit" title="Видалити">✕</button>
                         </form>
                     </div>
                 </div>
-            </li>
-        <?php endforeach; ?>
+            <?php endforeach; ?>
+            <?php if ($totalPages > 1): ?>
+                <div class="pagination">
+                    <?php if ($page > 1): ?>
+                        <a href="?page=<?= $page - 1 ?>">Назад</a>
+                    <?php endif; ?>
+                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                        <?php if ($i === $page): ?>
+                            <span class="active"><?= $i ?></span>
+                        <?php else: ?>
+                            <a href="?page=<?= $i ?>"><?= $i ?></a>
+                        <?php endif; ?>
+                    <?php endfor; ?>
+                    <?php if ($page < $totalPages): ?>
+                        <a href="?page=<?= $page + 1 ?>">Вперед</a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?> 
         <?php endif; ?>
 </div>
 </body>
