@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/TimestampableTrait.php';
-
 class Task
 {   use TimestampableTrait;
 
@@ -51,24 +49,23 @@ class Task
 
     
     // Статичний метод: з масиву (прочитаного з JSON) створює об'єкт Task
-    public static function fromArray(array $data): self
+   public static function fromArray(array $data): self
     {
-         $task = new self(
+        $task = new self(
             id: (int) $data['id'],
-            userId: (int) ($data['userId'] ?? 0),
+            userId: (int) ($data['user_id'] ?? $data['userId'] ?? 0),
             title: (string) $data['title'],
-            isCompleted: (bool) ($data['isCompleted'] ?? false),
+            isCompleted: (bool) ($data['is_completed'] ?? $data['isCompleted'] ?? false),
             deadline: $data['deadline'] ?? null,
         );
 
         $task->initTimestamps(
-            createdAt: $data['createdAt'] ?? null,
-            updatedAt: $data['updatedAt'] ?? null,
+            createdAt: $data['created_at'] ?? $data['createdAt'] ?? null,
+            updatedAt: $data['updated_at'] ?? $data['updatedAt'] ?? null,
         );
 
-        return $task;
-    }
-
+    return $task;
+}   
     // Перетворює об'єкт на звичайний масив для JSON-кодування
     public function toArray(): array
     {
