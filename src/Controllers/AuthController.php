@@ -1,14 +1,12 @@
 <?php
 declare(strict_types=1);
 
+namespace App\Controllers;
+
 class AuthController extends BaseController
 {
-    /**
-     * Відображення форми входу
-     */
     public function showLogin(): void
     {
-        // Якщо користувач уже авторизований — відправляємо на головну
         if (!empty($_SESSION['user_id'])) {
             $this->redirect('/');
         }
@@ -19,9 +17,6 @@ class AuthController extends BaseController
         ]);
     }
 
-    /**
-     * Обробка авторизації користувача
-     */
     public function login(): void
     {
         $username = trim($_POST['username'] ?? '');
@@ -30,23 +25,18 @@ class AuthController extends BaseController
         if (empty($username) || empty($password)) {
             $this->render('auth/login', [
                 'pageTitle'   => 'Вхід у систему — TaskFlow',
-                'error'       => 'Будь ласка, заповніть усі поля форми.',
+                'error'       => 'Будь ласка, заповніть усі обов\'язкові поля.',
                 'oldUsername' => $username,
             ]);
             return;
         }
 
-        // У навчальних цілях для ЛР №14 встановлюємо сесію користувача id=1
-        // Повна верифікація паролів через password_verify() реалізується в ЛР №16
         $_SESSION['user_id'] = 1;
         $_SESSION['user_name'] = htmlspecialchars($username);
 
         $this->redirect('/');
     }
 
-    /**
-     * Завершення сесії користувача (Logout)
-     */
     public function logout(): void
     {
         $_SESSION = [];
@@ -65,7 +55,6 @@ class AuthController extends BaseController
         }
 
         session_destroy();
-
         $this->redirect('/login');
     }
 }

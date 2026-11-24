@@ -11,36 +11,36 @@
 <?php else: ?>
     <div class="tasks-list">
         <?php foreach ($tasks as $task): ?>
-            <div class="task-card <?= $task->isCompleted() ? 'is-done' : '' ?>">
-                <div class="task-info">
-                    <h3 class="task-title"><?= htmlspecialchars($task->getTitle()) ?></h3>
-                    <div class="task-meta">
-                         <?php if ($task->getDeadline()): ?>
-                        <span class="deadline">📅 Дедлайн: <?= htmlspecialchars($task->getDeadline()) ?></span>
-                            <?php endif; ?>
-                        <span class="badge <?= $task->isCompleted() ? 'badge-success' : 'badge-pending' ?>">
-                        <?= $task->isCompleted() ? 'Виконано' : 'В процесі' ?>
-                        </span>
-                    </div>
-                </div>
-
-                <div class="task-actions">
-                    <form method="POST" action="/tasks/complete" style="display:inline">
-                        <input type="hidden" name="id" value="<?= $task->id ?>">
-                        <button type="submit" class="btn btn-icon btn-toggle" title="Змінити статус">
-                            <?= $task->isCompleted() ? '↩ Відновити' : '✓ Завершити' ?>
-                        </button>
-                    </form>
-
-                    <form method="POST" action="/tasks/delete" style="display:inline">
-                        <input type="hidden" name="id" value="<?= $task->id ?>">
-                        <button type="submit" class="btn btn-icon btn-delete" onclick="return confirm('Видалити завдання?')" title="Видалити">
-                            ✕
-                        </button>
-                    </form>
-                </div>
+    <div class="task-card <?= $task->isCompleted ? 'is-done' : '' ?>">
+        <div class="task-info">
+            <h3 class="task-title"><?= htmlspecialchars($task->title) ?></h3>
+            <div class="task-meta">
+                <?php if ($task->deadline): ?>
+                    <span class="deadline">📅 Дедлайн: <?= htmlspecialchars($task->deadline) ?></span>
+                <?php endif; ?>
+                <span class="badge <?= $task->isCompleted ? 'badge-success' : 'badge-pending' ?>">
+                    <?= $task->isCompleted ? 'Виконано' : 'В процесі' ?>
+                </span>
             </div>
-        <?php endforeach; ?>
+        </div>
+
+        <div class="task-actions">
+            <form method="POST" action="/tasks/complete" style="display:inline">
+                <input type="hidden" name="id" value="<?= $task->id ?>">
+                <button type="submit" class="btn btn-icon btn-toggle" title="Змінити статус">
+                    <?= $task->isCompleted ? '↩ Відновити' : '✓ Завершити' ?>
+                </button>
+            </form>
+
+            <form method="POST" action="/tasks/delete" style="display:inline">
+                <input type="hidden" name="id" value="<?= $task->id ?>">
+                <button type="submit" class="btn btn-icon btn-delete" onclick="return confirm('Видалити завдання?')" title="Видалити">
+                    ✕
+                </button>
+            </form>
+        </div>
+    </div>
+<?php endforeach; ?>
     </div>
 
     <?php if ($totalPages > 1): ?>

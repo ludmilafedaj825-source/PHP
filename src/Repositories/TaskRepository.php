@@ -1,144 +1,90 @@
 <?php
 declare(strict_types=1);
 
+namespace App\Repositories;
+
+use App\Models\Task;
+use PDO;
+
 class TaskRepository implements TaskStorageInterface
 {
-    public function __construct(private PDO $pdo){}
+    public function __construct(private PDO $pdo) {}
+
+    public function add(int $userId, string $title, ?string $deadline = null): int
+    {
+        $sql = "INSERT INTO tasks (user_id, title, is_completed, deadline, created_at) 
+                VALUES (:user_id, :title, 0, :deadline, NOW())";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':user_id'  => $userId,
+            ':title'    => $title,
+            ':deadline' => $deadline,
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
 
     public function findAllByUser(int $userId, int $page = 1, int $perPage = 5): array
     {
         $offset = ($page - 1) * $perPage;
 
-        $sql = 'SELECT id, user_id, title, is_completed, deadline, created_at, updated_at
+        $sql = "SELECT id, user_id, title, is_completed, deadline, created_at, updated_at 
                 FROM tasks 
-                WHERE user_id = :userId 
-                ORDER BY id 
-                DESC LIMIT :limit OFFSET :offset
-        ';
+                WHERE user_id = :user_id 
+                ORDER BY created_at DESC 
+                LIMIT :limit OFFSET :offset";
 
         $stmt = $this->pdo->prepare($sql);
-        // При вимкненій емуляції параметри LIMIT та OFFSET мають бути строго цілими числами
-        $stmt->bindValue(':userId', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-
         $stmt->execute();
-        $rows = $stmt->fetchAll();
-        return array_map(fn(array $row) => Task::fromArray($row), $rows);
+
+        $tasks = [];
+        while ($row = $stmt->fetch()) {
+            $tasks[] = new Task(
+                id: (int) $row['id'],
+                userId: (int) $row['user_id'],
+                title: $row['title'],
+                isCompleted: (bool) $row['is_completed'],
+                deadline: $row['deadline'],
+                createdAt: $row['created_at'],
+                updatedAt: $row['updated_at']
+            );
+        }
+
+        return $tasks;
     }
-    
+
     public function countByUser(int $userId): int
     {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM tasks WHERE user_id = :user_id');
-        $stmt->execute([':user_id' => $userId]);
-        return (int) $stmt->fetchColumn();
-    }
-
-    public function countCompletedByUser(int $userId): int
-    {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM tasks WHERE user_id = :user_id AND is_completed = 1');
-        $stmt->execute([':user_id' => $userId]);
-        return (int) $stmt->fetchColumn();
-    }
-
-    public function countOverdueByUser(int $userId): int
-    {
-        $sql  = 'SELECT COUNT(*) 
-        FROM tasks 
-        WHERE user_id = :user_id 
-        AND is_completed = 0
-        AND deadline IS NOT NULL 
-        AND deadline    < NOW()';
+        $sql = "SELECT COUNT(*) FROM tasks WHERE user_id = :user_id";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':user_id' => $userId]);
+
         return (int) $stmt->fetchColumn();
-    }
-
-    public function findByIdAndUser(int $id, int $userId): ?Task
-    {
-        $stmt = $this->pdo->prepare('SELECT * FROM tasks WHERE id = :id AND user_id = :user_id LIMIT 1');
-        $stmt->execute([
-            ':id' => $id, 
-            ':user_id' => $userId
-        ]);
-        $row = $stmt->fetch();
-        return $row ? Task::fromArray($row) : null;
-    }
-
-    public function add(int $userId, string $title, ?string $deadline = null): Task
-    {   
-        $errors=[];
-        $trimmedTitle = trim($title);
-
-        if(empty($trimmedTitle)){
-            $errors['title'] = "Назва завдання є обов'язковою для заповнення.";
-        } elseif(mb_strlen($trimmedTitle)<3){
-            $errors['title'] = "Назва завдання має містити не менше трьох символів.";
-        }
-
-        if(!empty($deadline) && strtotime($deadline) === false){
-                $errors['deadline'] = "Вказано некоректну дату дедлайну.";
-            }
-
-        if(!empty($errors)){
-            throw new ValidationException($errors);
-        }
-
-        $sql = 'INSERT INTO tasks (user_id, title, is_completed, deadline, created_at) 
-                VALUES (:user_id, :title, 0, :deadline, NOW())
-        ';
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
-            ':user_id' => $userId,
-            ':title' => $trimmedTitle,
-            ':deadline' => !empty($deadline) ? $deadline : null,
-        ]);
-        
-        $newId = (int) $this->pdo->lastInsertId();
-
-        $createdTask = $this->findByIdAndUser($newId, $userId);
-        if($createdTask === null){
-            throw new RuntimeException("Не вдалося отримати створене завдання з бази даних.");
-        }
-        return $createdTask;
     }
 
     public function complete(int $id, int $userId): bool
     {
-        $stmt = $this->pdo->prepare('
-        UPDATE tasks 
-        SET is_completed = 1, updated_at = NOW()
-         WHERE id = :id AND user_id = :user_id
-        ');
+        $sql = "UPDATE tasks 
+                SET is_completed = CASE WHEN is_completed = 1 THEN 0 ELSE 1 END,
+                    updated_at = NOW() 
+                WHERE id = :id AND user_id = :user_id";
 
-        $stmt->execute([
-            ':id' => $id,
-            ':user_id' => $userId
-        ]);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':id' => $id, ':user_id' => $userId]);
 
-        if ($stmt->rowCount() === 0) {
-            // Перевіряємо, чи взагалі існує завдання
-            if ($this->findByIdAndUser($id, $userId) === null) {
-                throw new TaskNotFoundException($id);
-            }
-        }
-
-        return true;
+        return $stmt->rowCount() > 0;
     }
 
     public function delete(int $id, int $userId): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM tasks WHERE id = :id AND user_id = :user_id');
-        $stmt->execute([
-            ':id' => $id,
-            ':user_id' => $userId
-        ]);
+        $sql = "DELETE FROM tasks WHERE id = :id AND user_id = :user_id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':id' => $id, ':user_id' => $userId]);
 
-        if ($stmt->rowCount() === 0) {
-            throw new TaskNotFoundException($id);
-        }
-
-        return true;
+        return $stmt->rowCount() > 0;
     }
 }

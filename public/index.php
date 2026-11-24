@@ -1,42 +1,47 @@
 <?php
 declare(strict_types=1);
 
-// Реєструємо простий завантажувач класів (до інтеграції Composer у ЛР №15)
-spl_autoload_register(function (string $class): void {
-    $paths = [
-        __DIR__ . '/../src/',
-        __DIR__ . '/../src/Controllers/',
-        __DIR__ . '/../src/Models/',
-        __DIR__ . '/../src/Repositories/',
-        __DIR__ . '/../src/Exceptions/',
-    ];
+use App\Controllers\AuthController;
+use App\Controllers\TaskController;
+use App\Models\Database;
+use App\Repositories\TaskRepository;
+use App\Router;
+use App\Services\TaskService;
+use Dotenv\Dotenv;
 
-    foreach ($paths as $path) {
-        $file = $path . $class . '.php';
-        if (file_exists($file)) {
-            require_once $file;
-            return;
-        }
-    }
-});
+// 1. Стандартний автозавантажувач класів Composer PSR-4
+require_once __DIR__ . '/../vendor/autoload.php';
 
-// Старт сесії користувача
+// 2. Безпечне завантаження конфігурації з файлу .env
+$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv->safeLoad();
+
+// 3. Старт користувацької сесії
 session_start();
 
-// Ініціалізація маршрутизатора
+// 4. Побудова дерева залежностей (Dependency Injection)
+$pdo            = Database::getConnection();
+$taskRepository = new TaskRepository($pdo);
+$taskService    = new TaskService($taskRepository);
+
+// Інстанціюємо контролери, передаючи необхідні сервіси через конструктор
+$taskController = new TaskController($taskService);
+$authController = new AuthController();
+
+// 5. Ініціалізація та налаштування маршрутизатора
 $router = new Router();
 
-// Реєстрація маршрутів для завдань
-$router->get('/',                 [TaskController::class, 'index']);
-$router->get('/tasks/create',     [TaskController::class, 'create']);
-$router->post('/tasks/create',    [TaskController::class, 'store']);
-$router->post('/tasks/complete',  [TaskController::class, 'complete']);
-$router->post('/tasks/delete',    [TaskController::class, 'delete']);
+// Маршрути задач
+$router->get('/',                [$taskController, 'index']);
+$router->get('/tasks/create',    [$taskController, 'create']);
+$router->post('/tasks/create',   [$taskController, 'store']);
+$router->post('/tasks/complete', [$taskController, 'complete']);
+$router->post('/tasks/delete',   [$taskController, 'delete']);
 
-// Реєстрація маршрутів автентифікації
-$router->get('/login',            [AuthController::class, 'showLogin']);
-$router->post('/login',           [AuthController::class, 'login']);
-$router->get('/logout',           [AuthController::class, 'logout']);
+// Маршрути авторизації
+$router->get('/login',           [$authController, 'showLogin']);
+$router->post('/login',          [$authController, 'login']);
+$router->get('/logout',          [$authController, 'logout']);
 
-// Запуск обробки запиту
+// 6. Обробка вхідного HTTP-запиту
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

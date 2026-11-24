@@ -1,43 +1,35 @@
 <?php
 declare(strict_types=1);
 
+namespace App\Controllers;
+
+use App\Services\TaskService;
+use InvalidArgumentException;
+
 class TaskController extends BaseController
 {
-    private TaskStorageInterface $repository;
+    public function __construct(
+        private TaskService $taskService
+    ) {}
 
-    public function __construct()
-    {
-        $pdo = Database::getConnection();
-        $this->repository = new TaskRepository($pdo);
-    }
-
-    /**
-     * Головна сторінка: список завдань поточного користувача
-     */
     public function index(): void
     {
         $this->requireAuth();
 
         $userId = (int) $_SESSION['user_id'];
         $page = max(1, (int) ($_GET['page'] ?? 1));
-        $perPage = 5;
 
-        $tasks = $this->repository->findAllByUser($userId, $page, $perPage);
-        $totalTasks = $this->repository->countByUser($userId);
-        $totalPages = (int) ceil($totalTasks / $perPage);
+        $data = $this->taskService->getTasksPaginated($userId, $page, perPage: 5);
 
         $this->render('tasks/index', [
             'pageTitle'  => 'Мої завдання — TaskFlow',
-            'tasks'      => $tasks,
-            'page'       => $page,
-            'totalPages' => $totalPages,
-            'totalTasks' => $totalTasks,
+            'tasks'      => $data['tasks'],
+            'page'       => $data['currentPage'],
+            'totalPages' => $data['totalPages'],
+            'totalTasks' => $data['totalTasks'],
         ]);
     }
 
-    /**
-     * Відображення форми створення нового завдання
-     */
     public function create(): void
     {
         $this->requireAuth();
@@ -49,40 +41,26 @@ class TaskController extends BaseController
         ]);
     }
 
-    /**
-     * Обробка відправки форми та збереження завдання
-     */
     public function store(): void
     {
         $this->requireAuth();
 
         $userId = (int) $_SESSION['user_id'];
-        $title = trim($_POST['title'] ?? '');
-        $deadlineRaw = trim($_POST['deadline'] ?? '');
-        $deadline = !empty($deadlineRaw) ? $deadlineRaw : null;
+        $title = $_POST['title'] ?? '';
+        $deadline = $_POST['deadline'] ?? '';
 
-        $errors = [];
-
-        if (mb_strlen($title) < 3) {
-            $errors[] = 'Назва завдання має містити щонайменше 3 символи.';
-        }
-
-        if (!empty($errors)) {
+        try {
+            $this->taskService->createTask($userId, $title, !empty($deadline) ? $deadline : null);
+            $this->redirect('/');
+        } catch (InvalidArgumentException $e) {
             $this->render('tasks/create', [
                 'pageTitle' => 'Нове завдання — TaskFlow',
-                'errors'    => $errors,
-                'old'       => ['title' => $title, 'deadline' => $deadlineRaw],
+                'errors'    => [$e->getMessage()],
+                'old'       => ['title' => $title, 'deadline' => $deadline],
             ]);
-            return;
         }
-
-        $this->repository->add($userId, $title, $deadline);
-        $this->redirect('/');
     }
 
-    /**
-     * Перемикання статусу виконання завдання
-     */
     public function complete(): void
     {
         $this->requireAuth();
@@ -90,16 +68,10 @@ class TaskController extends BaseController
         $userId = (int) $_SESSION['user_id'];
         $taskId = (int) ($_POST['id'] ?? 0);
 
-        if ($taskId > 0) {
-            $this->repository->complete($taskId, $userId);
-        }
-
+        $this->taskService->toggleTask($taskId, $userId);
         $this->redirect('/');
     }
 
-    /**
-     * Видалення завдання
-     */
     public function delete(): void
     {
         $this->requireAuth();
@@ -107,10 +79,7 @@ class TaskController extends BaseController
         $userId = (int) $_SESSION['user_id'];
         $taskId = (int) ($_POST['id'] ?? 0);
 
-        if ($taskId > 0) {
-            $this->repository->delete($taskId, $userId);
-        }
-
+        $this->taskService->deleteTask($taskId, $userId);
         $this->redirect('/');
     }
 }

@@ -1,31 +1,22 @@
 <?php
 declare(strict_types=1);
 
+namespace App\Models;
+
 trait TimestampableTrait
 {
-    private string $createdAt;
-    private ?string $updatedAt = null;
+    public ?string $createdAt = null;
+    public ?string $updatedAt = null;
 
-    /*Ініціалізує початкові значення дат створення та оновлення.*/
-    public function initTimestamps(?string $createdAt = null, ?string $updatedAt = null): void
+    public function initTimestamps(): void
     {
-        $this->createdAt = $createdAt ?? date('Y-m-d H:i:s');
-        $this->updatedAt = $updatedAt;
+        $now = date('Y-m-d H:i:s');
+        $this->createdAt = $now;
+        $this->updatedAt = $now;
     }
 
-    /*Оновлює мітку часу останньої модифікації на поточний момент.*/
     public function touch(): void
     {
         $this->updatedAt = date('Y-m-d H:i:s');
-    }
-
-    public function getCreatedAt(): string
-    {
-        return $this->createdAt;
-    }
-
-    public function getUpdatedAt(): ?string
-    {
-        return $this->updatedAt;
     }
 }
